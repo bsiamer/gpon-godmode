@@ -43,12 +43,13 @@ if [ "$1" == "dns" ]; then
         echo "Usage: ./gpon.sh dns <primary_dns> <secondary_dns>"
         exit 1
     fi
-    curl -N -X POST $API_URL/forceset -H "Content-Type: application/json" -d '{
-      "main_menu": "Network",
-      "sub_menu": "LAN",
-      "settings": { "firstDns": "'$2'", "secondDns": "'$3'" },
-      "submit_button": "save2"
-    }'
+    PAYLOAD=$(python -c "import json, sys; print(json.dumps({
+      'main_menu': 'Network',
+      'sub_menu': 'LAN',
+      'settings': { 'firstDns': sys.argv[1], 'secondDns': sys.argv[2] },
+      'submit_button': 'save2'
+    }))" "$2" "$3")
+    curl -N -X POST $API_URL/forceset -H "Content-Type: application/json" -d "$PAYLOAD"
     echo ""
     exit 0
 fi
@@ -58,12 +59,13 @@ if [ "$1" == "ipv6-dns" ]; then
         echo "Usage: ./gpon.sh ipv6-dns <primary_dns> <secondary_dns>"
         exit 1
     fi
-    curl -N -X POST $API_URL/forceset -H "Content-Type: application/json" -d '{
-      "main_menu": "Network",
-      "sub_menu": "LAN_IPv6",
-      "settings": { "LanDNS_select": "Static", "LanPri_DNS_text": "'$2'", "LanSec_DNS_text": "'$3'" },
-      "submit_button": "Apply_button"
-    }'
+    PAYLOAD=$(python -c "import json, sys; print(json.dumps({
+      'main_menu': 'Network',
+      'sub_menu': 'LAN_IPv6',
+      'settings': { 'LanDNS_select': 'Static', 'LanPri_DNS_text': sys.argv[1], 'LanSec_DNS_text': sys.argv[2] },
+      'submit_button': 'Apply_button'
+    }))" "$2" "$3")
+    curl -N -X POST $API_URL/forceset -H "Content-Type: application/json" -d "$PAYLOAD"
     echo ""
     exit 0
 fi
@@ -73,11 +75,12 @@ if [ "$1" == "port" ]; then
         echo "Usage: ./gpon.sh port <external_port> <internal_port> <server_ip>"
         exit 1
     fi
-    curl -N -X POST $API_URL/portforward -H "Content-Type: application/json" -d '{
-      "external_port": '$2',
-      "internal_port": '$3',
-      "server_ip": "'$4'"
-    }'
+    PAYLOAD=$(python -c "import json, sys; print(json.dumps({
+      'external_port': int(sys.argv[1]),
+      'internal_port': int(sys.argv[2]),
+      'server_ip': sys.argv[3]
+    }))" "$2" "$3" "$4")
+    curl -N -X POST $API_URL/portforward -H "Content-Type: application/json" -d "$PAYLOAD"
     echo ""
     exit 0
 fi

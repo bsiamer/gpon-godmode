@@ -5,6 +5,10 @@ from playwright.async_api import async_playwright
 
 load_dotenv()
 
+required_vars = ["ROUTER_IP", "ROUTER_USER", "ROUTER_PASS"]
+if any(not os.getenv(var) for var in required_vars):
+    raise RuntimeError("Missing essential .env configuration. Please ensure ROUTER_IP, ROUTER_USER, and ROUTER_PASS are set.")
+
 async def dump_docs():
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -15,7 +19,7 @@ async def dump_docs():
         try:
             router_ip = os.environ.get("ROUTER_IP")
             await page.goto(router_ip)
-        except:
+        except Exception:
             pass
             
         # Login
@@ -42,7 +46,8 @@ async def dump_docs():
                     if await elem.count() > 0 and await elem.first.is_visible():
                         await elem.first.click()
                         return True
-                except: pass
+                except Exception:
+                    pass
             return False
 
         menus_map = {

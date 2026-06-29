@@ -12,7 +12,7 @@ A full headless automation wrapper for Nokia/Alcatel GPON Home Gateways. This to
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/gpon-godmode.git
+git clone https://github.com/<your-username>/gpon-godmode.git
 cd gpon-godmode
 
 # 2. Run the setup script

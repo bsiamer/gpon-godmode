@@ -9,6 +9,11 @@ import re
 from playwright.async_api import async_playwright
 
 load_dotenv()
+
+required_vars = ["ROUTER_IP", "ROUTER_USER", "ROUTER_PASS"]
+if any(not os.getenv(var) for var in required_vars):
+    raise RuntimeError("Missing essential .env configuration. Please ensure ROUTER_IP, ROUTER_USER, and ROUTER_PASS are set.")
+
 app = FastAPI()
 router_lock = asyncio.Lock()
 
@@ -33,7 +38,8 @@ async def click_in_any_frame(page, text):
             if await elem.count() > 0:
                 await elem.first.click()
                 return
-        except: pass
+        except Exception:
+            pass
 
 async def wait_for_selector_in_mainframe(page, selector):
     await page.wait_for_load_state('networkidle')
@@ -41,7 +47,8 @@ async def wait_for_selector_in_mainframe(page, selector):
         if frame.name == "mainFrame":
             try:
                 await frame.locator(selector).first.wait_for(state="attached", timeout=5000)
-            except: pass
+            except Exception:
+                pass
             return frame
     return page.frames[-1]
 
@@ -51,7 +58,6 @@ async def router_login(page):
     
     yield "Entering credentials...\n"
     inputs = await page.locator("input").all()
-    user_filled, pass_filled = False, False
     for input_field in inputs:
         if not await input_field.is_visible(): continue
         input_type = await input_field.get_attribute("type")

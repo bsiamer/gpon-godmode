@@ -22,3 +22,9 @@ playwright install chromium
 
 echo "✅ Setup complete! You can now start the API with:"
 echo "   source venv/bin/activate && python api.py"
+
+if [ ! -f ".env" ]; then
+    echo "⚠️  .env file not found. Copying .env.example to .env..."
+    cp .env.example .env
+    echo "⚠️  Please edit the .env file with your router credentials before running the server!"
+fi
