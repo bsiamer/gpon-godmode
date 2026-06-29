@@ -201,9 +201,22 @@ async def forceset_generator(req: ForceSetRequest):
                         yield f" -> Set {element_id} to {val}\n"
                         
                     yield f"Clicking submit button '{req.submit_button}'...\n"
+                    yield f"Clicking submit button '{req.submit_button}'...\n"
                     page.on("dialog", lambda dialog: dialog.accept())
-                    submit_btn = main_frame.locator(f"[name='{req.submit_button}'], [id='{req.submit_button}']").first
-                    await submit_btn.click(force=True)
+                    
+                    try:
+                        submit_btn = main_frame.locator(f"[name='{req.submit_button}'], [id='{req.submit_button}']").first
+                        await submit_btn.click(force=True, timeout=2000)
+                    except Exception:
+                        yield "Exact button ID not found, falling back to smart-search...\n"
+                        buttons = main_frame.locator("button, input[type='submit'], input[type='button']")
+                        for i in range(await buttons.count()):
+                            btn = buttons.nth(i)
+                            if await btn.is_visible():
+                                text = (await btn.text_content() or await btn.get_attribute("value") or "").lower()
+                                if "save" in text or "apply" in text or "submit" in text:
+                                    await btn.click(force=True)
+                                    break
                     
                     await page.wait_for_load_state('networkidle')
                     yield "Done! God-mode bypass complete.\n"

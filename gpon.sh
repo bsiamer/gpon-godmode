@@ -11,8 +11,10 @@ function show_help() {
     echo "Commands:"
     echo "  start                       Start the background API server"
     echo "  stop                        Stop the background API server"
-    echo "  dns <pri_ip> <sec_ip>       Force set the LAN IPv4 DNS servers"
-    echo "  ipv6-dns <pri> <sec>        Force set the LAN IPv6 DNS servers"
+    echo "  dns <primary> <secondary>     Force-set LAN DNS servers"
+echo "  ipv6-dns <pri> <sec>          Force-set IPv6 DNS servers"
+echo "  block <mac_address>           Block a device from the Wi-Fi"
+echo "  wifi-pass <new_password>      Change the Wi-Fi password"
     echo "  port <ext> <int> <ip>       Force open a port forward"
     echo "  reboot                      Reboot the GPON gateway"
     echo "========================================="
@@ -81,6 +83,38 @@ if [ "$1" == "port" ]; then
       'server_ip': sys.argv[3]
     }))" "$2" "$3" "$4")
     curl -N -X POST $API_URL/portforward -H "Content-Type: application/json" -d "$PAYLOAD"
+    echo ""
+    exit 0
+fi
+
+if [ "$1" == "block" ]; then
+    if [ -z "$2" ]; then
+        echo "Usage: ./gpon.sh block <mac_address>"
+        exit 1
+    fi
+    PAYLOAD=$(python -c "import json, sys; print(json.dumps({
+      'main_menu': 'Security',
+      'sub_menu': 'MAC Filter',
+      'settings': { 'wlan_mac_exclude_mod': 'Blocked', 'wlan_mac_address': sys.argv[1] },
+      'submit_button': 'submit'
+    }))" "$2")
+    curl -N -X POST $API_URL/forceset -H "Content-Type: application/json" -d "$PAYLOAD"
+    echo ""
+    exit 0
+fi
+
+if [ "$1" == "wifi-pass" ]; then
+    if [ -z "$2" ]; then
+        echo "Usage: ./gpon.sh wifi-pass <new_password>"
+        exit 1
+    fi
+    PAYLOAD=$(python -c "import json, sys; print(json.dumps({
+      'main_menu': 'Network',
+      'sub_menu': 'Wireless (2.4GHz)',
+      'settings': { 'wpaKey': sys.argv[1] },
+      'submit_button': 'btnApply'
+    }))" "$2")
+    curl -N -X POST $API_URL/forceset -H "Content-Type: application/json" -d "$PAYLOAD"
     echo ""
     exit 0
 fi
