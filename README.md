@@ -101,6 +101,7 @@ The `./gpon.sh` wrapper runs in your current shell and maps commands directly to
 ./gpon.sh dmz disable
 
 # Fix gaming packet drops (DMZ + disable DoS filter + disable SIP ALG + UPnP)
+# Prompts for safety confirmation; pass -y / --yes to skip in scripts
 ./gpon.sh gaming 192.168.1.74
 
 # Change DHCP DNS servers
@@ -194,6 +195,8 @@ Algérie Télécom's stock firmware has three quirks that ruin games like Fortni
 3. **Strict NAT**: Without UPnP or DMZ, inbound game sessions get blocked.
 
 Running `./gpon.sh gaming <your-ip>` disables the DoS filter, turns off the bad ALGs, enables UPnP, and routes unmatched traffic to your machine via DMZ.
+
+> ⚠️ **Security Warning**: Placing a machine in DMZ and disabling the router's DoS filter exposes that machine fully to the internet without firewall protection. Ensure the target device has an active host firewall (e.g. UFW on Linux or Windows Defender).
 
 ---
 

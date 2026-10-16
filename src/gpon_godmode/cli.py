@@ -51,6 +51,32 @@ def output_error(error: Exception, as_json: bool = False):
     sys.exit(1)
 
 
+def confirm_exposure(target_ip: str, is_gaming: bool = False, auto_yes: bool = False, as_json: bool = False) -> bool:
+    """Prompts for user confirmation before exposing a target device directly to the internet."""
+    if auto_yes:
+        return True
+
+    action_desc = "Gaming macro (DMZ + disabled DoS filter)" if is_gaming else "DMZ"
+    warning = (
+        f"\n[!] SAFETY WARNING: {action_desc} routes all unsolicited incoming internet traffic directly to {target_ip} with router firewalling disabled.\n"
+        f"    This exposes the target machine fully to the internet. Ensure {target_ip} has an active host firewall (e.g. UFW, Windows Defender).\n"
+    )
+
+    if as_json:
+        if not sys.stdin.isatty():
+            print(json.dumps({"error": "Confirmation required. Pass -y/--yes to confirm exposure.", "target_ip": target_ip}), file=sys.stderr)
+            sys.exit(1)
+
+    print(warning, file=sys.stderr if as_json else sys.stdout)
+    try:
+        prompt = f"Are you sure you want to expose {target_ip}? [y/N]: "
+        choice = input(prompt).strip().lower()
+        return choice in ("y", "yes")
+    except (EOFError, KeyboardInterrupt):
+        print("\nAborted.", file=sys.stderr if as_json else sys.stdout)
+        return False
+
+
 def main():
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument(
@@ -61,6 +87,12 @@ def main():
     common.add_argument(
         "--ip",
         help="Gateway IP (defaults to ROUTER_IP or http://192.168.1.254)",
+    )
+    common.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip safety confirmation prompts",
     )
 
     parser = argparse.ArgumentParser(
@@ -262,6 +294,9 @@ def main():
                 dmz_cfg = client.get_dmz()
                 output_result(dmz_cfg, as_json=args.json, text_formatter=lambda d: print(f"DMZ Enabled: {d.enabled} | Target IP: {d.ip_address}"))
             elif args.dmz_action == "set":
+                if not confirm_exposure(args.ip, is_gaming=False, auto_yes=args.yes, as_json=args.json):
+                    output_result({"action": "set_dmz", "cancelled": True, "message": "Operation cancelled by user."}, as_json=args.json, text_formatter=lambda r: print(r["message"]))
+                    sys.exit(0)
                 ok = client.set_dmz(args.ip, enabled=True)
                 res = {"action": "set_dmz", "success": ok, "ip": args.ip, "enabled": True}
                 output_result(res, as_json=args.json, text_formatter=lambda r: print(f"DMZ successfully enabled for IP {r['ip']}"))
@@ -276,6 +311,9 @@ def main():
             output_result(res, as_json=args.json, text_formatter=lambda r: print(f"DNS servers set to {r['primary']}, {r['secondary']}"))
 
         elif args.command == "gaming":
+            if not confirm_exposure(args.ip, is_gaming=True, auto_yes=args.yes, as_json=args.json):
+                output_result({"action": "gaming", "cancelled": True, "message": "Operation cancelled by user."}, as_json=args.json, text_formatter=lambda r: print(r["message"]))
+                sys.exit(0)
             res = client.optimize_gaming(args.ip)
             output_result(res, as_json=args.json, text_formatter=lambda r: print(r.message))
 
