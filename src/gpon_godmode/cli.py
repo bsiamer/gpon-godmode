@@ -51,30 +51,32 @@ def output_error(error: Exception, as_json: bool = False):
     sys.exit(1)
 
 
-def confirm_exposure(target_ip: str, is_gaming: bool = False, auto_yes: bool = False, as_json: bool = False) -> bool:
-    """Prompts for user confirmation before exposing a target device directly to the internet."""
+def confirm_action(warning_msg: str, auto_yes: bool = False, as_json: bool = False) -> bool:
+    """Prompt user before performing security-sensitive actions (DMZ, disabling firewall)."""
     if auto_yes:
         return True
-
-    action_desc = "Gaming macro (DMZ + disabled DoS filter)" if is_gaming else "DMZ"
-    warning = (
-        f"\n[!] SAFETY WARNING: {action_desc} routes all unsolicited incoming internet traffic directly to {target_ip} with router firewalling disabled.\n"
-        f"    This exposes the target machine fully to the internet. Ensure {target_ip} has an active host firewall (e.g. UFW, Windows Defender).\n"
-    )
-
-    if as_json:
-        if not sys.stdin.isatty():
-            print(json.dumps({"error": "Confirmation required. Pass -y/--yes to confirm exposure.", "target_ip": target_ip}), file=sys.stderr)
+    if not sys.stdin.isatty():
+        if as_json:
+            output_error(
+                PermissionError(
+                    f"{warning_msg} Pass -y/--yes to confirm when running non-interactively."
+                ),
+                as_json=True,
+            )
+        else:
+            print(
+                f"Error: {warning_msg}\nPass -y or --yes to confirm when running non-interactively.",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
-    print(warning, file=sys.stderr if as_json else sys.stdout)
+    print(f"\n⚠️  Security Warning: {warning_msg}", file=sys.stderr)
     try:
-        prompt = f"Are you sure you want to expose {target_ip}? [y/N]: "
-        choice = input(prompt).strip().lower()
-        return choice in ("y", "yes")
-    except (EOFError, KeyboardInterrupt):
-        print("\nAborted.", file=sys.stderr if as_json else sys.stdout)
-        return False
+        reply = input("Are you sure you want to proceed? [y/N]: ").strip().lower()
+        return reply in ("y", "yes")
+    except (KeyboardInterrupt, EOFError):
+        print("\nAborted.", file=sys.stderr)
+        sys.exit(1)
 
 
 def main():
@@ -87,12 +89,6 @@ def main():
     common.add_argument(
         "--ip",
         help="Gateway IP (defaults to ROUTER_IP or http://192.168.1.254)",
-    )
-    common.add_argument(
-        "-y",
-        "--yes",
-        action="store_true",
-        help="Skip safety confirmation prompts",
     )
 
     parser = argparse.ArgumentParser(
@@ -135,6 +131,7 @@ def main():
     dmz_sub.add_parser("get", parents=[common], help="Show current DMZ status")
     dmz_set = dmz_sub.add_parser("set", parents=[common], help="Enable DMZ for a target IP")
     dmz_set.add_argument("ip", help="LAN IP address to put in DMZ")
+    dmz_set.add_argument("-y", "--yes", action="store_true", help="Skip security confirmation prompt")
     dmz_sub.add_parser("disable", parents=[common], help="Disable DMZ")
 
     # 5. DNS
@@ -147,6 +144,7 @@ def main():
         "gaming", parents=[common], help="Apply gaming optimizations (DMZ + disable DoS filter + disable SIP ALG + UPnP)"
     )
     gaming_parser.add_argument("ip", help="Target console/PC IP address")
+    gaming_parser.add_argument("-y", "--yes", action="store_true", help="Skip security confirmation prompt")
 
     # 7. Reboot
     subparsers.add_parser("reboot", parents=[common], help="Soft-reboot the gateway")
@@ -294,8 +292,12 @@ def main():
                 dmz_cfg = client.get_dmz()
                 output_result(dmz_cfg, as_json=args.json, text_formatter=lambda d: print(f"DMZ Enabled: {d.enabled} | Target IP: {d.ip_address}"))
             elif args.dmz_action == "set":
-                if not confirm_exposure(args.ip, is_gaming=False, auto_yes=args.yes, as_json=args.json):
-                    output_result({"action": "set_dmz", "cancelled": True, "message": "Operation cancelled by user."}, as_json=args.json, text_formatter=lambda r: print(r["message"]))
+                if not confirm_action(
+                    f"Putting {args.ip} into DMZ forwards ALL unsolicited inbound internet traffic directly to this machine.",
+                    auto_yes=args.yes,
+                    as_json=args.json,
+                ):
+                    print("Action cancelled.", file=sys.stderr)
                     sys.exit(0)
                 ok = client.set_dmz(args.ip, enabled=True)
                 res = {"action": "set_dmz", "success": ok, "ip": args.ip, "enabled": True}
@@ -311,8 +313,12 @@ def main():
             output_result(res, as_json=args.json, text_formatter=lambda r: print(f"DNS servers set to {r['primary']}, {r['secondary']}"))
 
         elif args.command == "gaming":
-            if not confirm_exposure(args.ip, is_gaming=True, auto_yes=args.yes, as_json=args.json):
-                output_result({"action": "gaming", "cancelled": True, "message": "Operation cancelled by user."}, as_json=args.json, text_formatter=lambda r: print(r["message"]))
+            if not confirm_action(
+                f"Gaming mode puts {args.ip} into DMZ and disables router DoS protection, exposing this machine directly to the internet.",
+                auto_yes=args.yes,
+                as_json=args.json,
+            ):
+                print("Action cancelled.", file=sys.stderr)
                 sys.exit(0)
             res = client.optimize_gaming(args.ip)
             output_result(res, as_json=args.json, text_formatter=lambda r: print(r.message))
