@@ -1,16 +1,16 @@
 # gpon-godmode
 
-CLI, MCP server, and REST API for automating the Nokia/Alcatel-Lucent G-240W-F fiber router distributed by Algérie Télécom.
+I made this so I could open ports without having to log into my router's web dashboard every time, and so my server apps (Minecraft servers, game lobbies, self-hosted backends) can open the ports they need automatically.
 
-The router's web interface is painfully slow, requires clunky forms, and hides or breaks basic features. This project reverse-engineers the frontend's Stanford JavaScript Crypto Library (SJCL) login flow (RSA-1024 + AES-128-CBC) to speak directly to the router's internal CGI endpoints over plain HTTP. No headless browser, no Playwright, sub-second responses.
+It targets the **Nokia / Alcatel-Lucent G-240W-F** fiber router distributed by Algérie Télécom. Logging into that web interface just to forward a port for a game or server is painfully slow and clunky. This project reverse-engineers the frontend's login crypto (RSA-1024 + AES-128-CBC) to talk straight to the router's internal CGI endpoints over plain HTTP in ~200ms. No browser automation or Playwright required.
 
 ```mermaid
 flowchart LR
     subgraph Clients["Clients"]
         direction TB
+        ServerApps["Game Servers & Apps (Auto-Port Forward)"]
+        CLI["Terminal (gpon ports add)"]
         Agent["AI Agents (MCP)"]
-        CLI["CLI (gpon)"]
-        API["REST (Java / Go / Apps)"]
     end
 
     subgraph Core["gpon_godmode"]
@@ -22,12 +22,12 @@ flowchart LR
     end
 
     subgraph Router["Nokia G-240W-F"]
-        CGI["CGI Endpoints"]
+        CGI["Router NAT / CGI"]
     end
 
-    Agent --> Core
+    ServerApps -->|Open / Close Ports| Daemon --> Engine
     CLI --> Core
-    API --> Daemon --> Engine
+    Agent --> Core
     Engine -->|HTTP POST/GET| CGI
 ```
 
@@ -35,13 +35,12 @@ flowchart LR
 
 ## What it does
 
-- **CLI with `--json`**: Query status, list devices, change DNS, forward ports, or run macros straight from your terminal. Adding `--json` gives machine-readable output for scripts and agents.
-- **Model Context Protocol (MCP)**: Native stdio server (`gpon-mcp`) giving Claude, Cursor, and other agent tools direct control over the router.
-- **REST daemon on port 8254**: Local FastAPI service so other programs (Go apps, Java backends, Minecraft plugins) don't have to re-implement router crypto.
-- **Zero-RAM sleep (systemd socket activation)**: The daemon can stay asleep at 0 MB RAM, wake up on the first HTTP call, stay warm for 60 seconds, and exit cleanly when idle.
-- **Optical signal stats**: Reads live fiber transceiver power (TX/RX dBm), laser temperature, and bias current.
-- **Ethernet link speed**: Checks negotiated link speed (1000 Mbps vs 100 Mbps) per LAN port to catch bad cables.
-- **Gaming latency macro**: One command to toss your PC/console into DMZ, turn on UPnP, and turn off the broken firewall DoS filter and voice-corrupting ALGs (SIP/RTSP) that cause matchmaking packet loss.
+- **Automated port forwarding for server apps**: Let your game servers or backends request port forwards on startup and clean them up on shutdown. Comes with a zero-dependency Java SDK (including an auto-forwarding Paper/Spigot Minecraft plugin) and a Go SDK.
+- **Port management without the web UI**: Open, list, or delete NAT port forwards straight from your terminal (`./gpon.sh ports add 25565 25565 192.168.1.154`) or via a local REST API on port `8254`.
+- **Zero-RAM sleep (systemd socket activation)**: The local API daemon can sleep at 0 MB RAM until a server app calls it to forward a port, stay warm in memory for 60 seconds, and shut down automatically when idle.
+- **Gaming latency fix**: One command (`./gpon.sh gaming <ip>`) to put your gaming rig into DMZ, turn on UPnP, and disable the broken firewall DoS filter and voice-corrupting ALGs that drop packets in games like Fortnite.
+- **Line diagnostics**: Read fiber optic signal power (TX/RX dBm) and check physical LAN port speeds (1000M vs 100M cable bottlenecks).
+- **AI Agent support**: Built-in Model Context Protocol (MCP) server so agents in Claude or Cursor can manage router settings.
 
 ---
 
