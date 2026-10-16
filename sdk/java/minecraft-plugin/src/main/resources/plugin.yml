@@ -1,0 +1,15 @@
+name: GponPortForward
+version: '2.0.0'
+main: com.gpon.godmode.plugin.GponPortForwardPlugin
+api-version: '1.20'
+author: GPON God-Mode
+description: Automated Nokia/Alcatel GPON Gateway NAT port forwarding and fiber optic telemetry monitor
+commands:
+  gpon:
+    description: GPON Gateway management and fiber diagnostics
+    permission: gpon.admin
+    usage: /<command> [status|optical|ping|forward|unforward|devices|gaming|reboot|help]
+permissions:
+  gpon.admin:
+    description: Allows administrative access to GPON gateway commands
+    default: op

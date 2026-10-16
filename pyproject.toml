@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling>=1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gpon-godmode"
+version = "2.0.0"
+description = "Agent-native automation toolkit & FastMCP server for Nokia/Alcatel GPON Gateways"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Noe" }
+]
+dependencies = [
+    "httpx>=0.28.0,<1.0.0",
+    "cryptography>=43.0.0,<51.0.0",
+    "pydantic>=2.10.0,<3.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "fastapi>=0.115.0,<1.0.0",
+    "uvicorn>=0.30.0,<1.0.0",
+]
+
+[project.optional-dependencies]
+mcp = [
+    "mcp>=2.3.0,<3.0.0",
+]
+
+[project.scripts]
+gpon = "gpon_godmode.cli:main"
+gpon-mcp = "gpon_godmode.mcp_server:main"
+gpon-api = "gpon_godmode.api:run_daemon"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gpon_godmode"]

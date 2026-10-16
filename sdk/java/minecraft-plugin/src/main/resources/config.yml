@@ -1,0 +1,44 @@
+# ==============================================================================
+#  GPON God-Mode Minecraft Port Forwarding & Optical Telemetry Plugin
+# ==============================================================================
+
+# Connection settings for the GPON God-Mode local REST daemon
+gpon:
+  # Hostname or IP of the REST daemon (default 127.0.0.1)
+  host: "127.0.0.1"
+
+  # Port of the REST daemon (default niche port: 8254)
+  port: 8254
+
+  # Fallback to local 'gpon <command> --json' CLI if daemon is temporarily down
+  fallback-to-cli: true
+
+# NAT Port Forwarding configuration
+port-forward:
+  # Whether to automatically open the port on server startup and close on shutdown
+  enabled: true
+
+  # Custom rule identifier shown in router virtual host tables
+  rule-name: "Minecraft-Auto"
+
+  # Protocol to forward ("TCP", "UDP", or "TCP/UDP")
+  protocol: "TCP/UDP"
+
+  # Target LAN IP of this server machine.
+  # Set to "auto" to automatically detect the first site-local IPv4 address (e.g. 192.168.1.x)
+  server-ip: "auto"
+
+  # External WAN port. Set to 0 to automatically mirror server-port from server.properties
+  external-port: 0
+
+  # Internal LAN port. Set to 0 to mirror server-port
+  internal-port: 0
+
+# Optical Telemetry & Fiber Health Alerts
+optical:
+  # Query fiber optical health on server startup and log status to console
+  check-on-startup: true
+
+  # Alert threshold for receive optical power in dBm.
+  # Normal GPON range is -8.0 to -25.0 dBm. If RX drops below this number, a warning is emitted.
+  alert-threshold-rx-dbm: -25.0

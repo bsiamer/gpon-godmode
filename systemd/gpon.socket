@@ -1,0 +1,10 @@
+[Unit]
+Description=GPON God-Mode REST API Socket
+PartOf=gpon.service
+
+[Socket]
+ListenStream=127.0.0.1:8254
+ReusePort=true
+
+[Install]
+WantedBy=sockets.target

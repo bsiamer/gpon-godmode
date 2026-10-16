@@ -1,0 +1,15 @@
+[Unit]
+Description=GPON God-Mode REST API Daemon (On-Demand)
+After=network.target gpon.socket
+Requires=gpon.socket
+
+[Service]
+Type=simple
+WorkingDirectory=/home/noe/Projects/gpon-godmode
+ExecStart=/home/noe/Projects/gpon-godmode/venv/bin/gpon daemon --idle-timeout 60
+Restart=no
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

@@ -1,7 +1,30 @@
-venv/
-__pycache__/
-*.pyc
+# Environment & Secrets
 .env
-api.log
-api.pid
-router_settings.md
+*.env.local
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Process and logs
+*.log
+*.pid
+
+# Temporary dumps & images
+*.png
+*.html
+*.xml
+!pom.xml
+*.bin
+*.cfg
+research/dump_*
