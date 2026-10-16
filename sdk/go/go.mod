@@ -1,3 +1,3 @@
-module github.com/noecodes/gpon-godmode/sdk/go
+module github.com/bsiamer/gpon-godmode/sdk/go
 
 go 1.22

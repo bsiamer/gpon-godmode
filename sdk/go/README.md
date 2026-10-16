@@ -19,7 +19,7 @@ Engineered specifically for Go microservices, game server backends, network moni
 ## Installation
 
 ```bash
-go get github.com/noecodes/gpon-godmode/sdk/go
+go get github.com/bsiamer/gpon-godmode/sdk/go
 ```
 
 ---

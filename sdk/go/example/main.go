@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/noecodes/gpon-godmode/sdk/go"
+	"github.com/bsiamer/gpon-godmode/sdk/go"
 )
 
 func main() {
